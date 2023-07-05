@@ -1,11 +1,49 @@
 /*
-    @Author  77
-    @Date    2021-06-06
-    @GitHub  https://github.com/fan-ziqi
+    @Author  coyote
+    @Date    2023-06-05
+    @GitHub  https://github.com/typenoob
 */
-var choose = 1; //修改此处来选择评哪个选项，数值1-5对应五个选项,对于2021年的评教,1为非常满意
-document.querySelectorAll('[data-dyf="' + String(6 - choose) + '"]').forEach(function (t) { t.click(); });
 
-console.log("将全部选择第%d个选项", choose);
-console.log("本位老师评选成功！请手动点击页面下方的提交选项。");
-console.log("@Author  77\n@Date    2021-06-06\n@GitHub  https://github.com/fan-ziqi\n");
+
+function waitForElm(selector, wait = 3000) {
+	return new Promise((resolve, reject) => {
+		if (document.querySelector(selector)) {
+			return resolve(document.querySelector(selector));
+		}
+		const timeout = setTimeout(
+			() => {
+				observer.disconnect();
+				reject(` ${selector} 元素未找到`);
+			},
+			wait
+		);
+		const observer = new MutationObserver(_ => {
+			if (document.querySelector(selector)) {
+				resolve(document.querySelector(selector));
+				clearTimeout(timeout);
+				observer.disconnect();
+			}
+		});
+		observer.observe(document.body, {
+			childList: true,
+			subtree: true
+		});
+	});
+}
+new Promise(async (resolve, reject) => {
+	const charts = Array.from(document.querySelector("#tempGrid").children[0].children);
+	charts.shift();
+	for await (const chart of charts) {
+		chart.click();
+		const radioButtons = await waitForElm('.radio-inline').catch(err => reject(err));
+		for await (const i of [...Array(40).keys()]) {
+			if (radioButtons[i].innerText == '非常满意 ') radioButtons[i].children[0].firstElementChild.click();
+		};
+		const tjBtn = await waitForElm('#btn_xspj_tj').catch(err => reject(err));
+		tjBtn.dispatchEvent(new Event('mouseover'));
+		tjBtn.click();
+		const okBtn = await waitForElm('#btn_ok').catch(err => reject(err));
+		okBtn.click();
+	}
+	resolve(true);
+}).then((_) => alert('success!')).catch(err => alert(`error: ${err}`));
